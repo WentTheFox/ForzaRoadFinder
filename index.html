@@ -72,17 +72,28 @@
 
     #canvas-wrap {
       flex: 1;
-      overflow: auto;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       background: #0a0a0a;
+      overflow: hidden;
+    }
+
+    #canvas-wrap.full-scale {
+      overflow: auto;
+      align-items: flex-start;
     }
 
     canvas {
       display: block;
       max-width: 100%;
+      max-height: 100%;
       image-rendering: pixelated;
+    }
+
+    #canvas-wrap.full-scale canvas {
+      max-width: none;
+      max-height: none;
     }
 
     #placeholder {
@@ -104,6 +115,7 @@
   <button id="pauseBtn" disabled>Pause</button>
   <button id="stopBtn" disabled>Stop</button>
   <button id="saveBtn" disabled>Save Image</button>
+  <button id="scaleBtn">100% Scale</button>
 
   <div class="ctrl-group">
     <span class="swatch" style="background:#808080"></span>
@@ -141,6 +153,8 @@
   const pauseBtn    = document.getElementById('pauseBtn');
   const stopBtn     = document.getElementById('stopBtn');
   const saveBtn     = document.getElementById('saveBtn');
+  const scaleBtn    = document.getElementById('scaleBtn');
+  const canvasWrap  = document.getElementById('canvas-wrap');
   const fpsRange    = document.getElementById('fps');
   const fpsNum      = document.getElementById('fpsNum');
   const tolRange    = document.getElementById('tolerance');
@@ -206,6 +220,11 @@
     } catch (e) {
       statusEl.textContent = 'Error: ' + (e.message || e);
     }
+  });
+
+  scaleBtn.addEventListener('click', () => {
+    const full = canvasWrap.classList.toggle('full-scale');
+    scaleBtn.textContent = full ? 'Fit to Window' : '100% Scale';
   });
 
   saveBtn.addEventListener('click', () => {
