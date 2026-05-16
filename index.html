@@ -51,14 +51,14 @@
       gap: 7px;
     }
 
-    .swatch {
-      width: 16px;
-      height: 16px;
-      border-radius: 3px;
+    input[type=color] {
+      width: 32px;
+      height: 24px;
+      padding: 1px 2px;
       border: 1px solid #555;
-      display: inline-block;
-      vertical-align: middle;
-      flex-shrink: 0;
+      border-radius: 3px;
+      background: #2a2a2a;
+      cursor: pointer;
     }
 
     input[type=range] { width: 90px; accent-color: #888; }
@@ -125,9 +125,11 @@
   <button id="scaleBtn">100% Scale</button>
 
   <div class="ctrl-group">
-    <span class="swatch" style="background:#808080"></span>
+    <label for="colorTarget">Find</label>
+    <input type="color" id="colorTarget" value="#808080">
     <span>→</span>
-    <span class="swatch" style="background:#ff00ff"></span>
+    <label for="colorReplace">Replace</label>
+    <input type="color" id="colorReplace" value="#ff00ff">
   </div>
 
   <div class="ctrl-group">
@@ -167,8 +169,10 @@
   const fpsNum      = document.getElementById('fpsNum');
   const tolRange    = document.getElementById('tolerance');
   const tolNum      = document.getElementById('tolNum');
-  const statusEl    = document.getElementById('status');
-  const placeholder = document.getElementById('placeholder');
+  const colorTarget  = document.getElementById('colorTarget');
+  const colorReplace = document.getElementById('colorReplace');
+  const statusEl     = document.getElementById('status');
+  const placeholder  = document.getElementById('placeholder');
 
   // Keep range and number inputs in sync
   function syncPair(range, num) {
@@ -188,13 +192,32 @@
   let running = false;
   let paused  = false;
 
-  // Target #808080, replacement #FF00FF
-  // In Uint32 little-endian (ABGR order in memory = RGBA in ImageData):
-  //   buf32[i] = R | G<<8 | B<<16 | A<<24
-  //   #808080 A=255 => 0xFF808080
-  //   #FF00FF A=255 => 0xFFFF00FF
-  const TARGET_U32  = 0xFF808080 | 0; // signed 32-bit
-  const REPLACE_U32 = 0xFFFF00FF | 0;
+  // Cached per-channel values and Uint32 representations of the chosen colours.
+  // Uint32 layout (little-endian ImageData): R | G<<8 | B<<16 | A<<24
+  let targetRgb  = [0, 0, 0];
+  let replaceRgb = [0, 0, 0];
+  let targetU32  = 0;
+  let replaceU32 = 0;
+
+  function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF];
+  }
+
+  function rgbToU32(r, g, b) {
+    return (r | (g << 8) | (b << 16) | (0xFF << 24)) | 0;
+  }
+
+  function updateColors() {
+    targetRgb  = hexToRgb(colorTarget.value);
+    replaceRgb = hexToRgb(colorReplace.value);
+    targetU32  = rgbToU32(...targetRgb);
+    replaceU32 = rgbToU32(...replaceRgb);
+  }
+
+  colorTarget.addEventListener('input', updateColors);
+  colorReplace.addEventListener('input', updateColors);
+  updateColors();
 
   startBtn.addEventListener('click', async () => {
     try {
@@ -284,23 +307,22 @@
     const tol       = parseInt(tolRange.value, 10);
 
     if (tol === 0) {
-      // Fast exact-match path via 32-bit view
       const buf32 = new Uint32Array(data.buffer);
       const len = buf32.length;
       for (let i = 0; i < len; i++) {
-        if (buf32[i] === TARGET_U32) buf32[i] = REPLACE_U32;
+        if (buf32[i] === targetU32) buf32[i] = replaceU32;
       }
     } else {
-      // Tolerance path — compare each channel individually
+      const [tr, tg, tb] = targetRgb;
+      const [rr, rg, rb] = replaceRgb;
       const len = data.length;
       for (let i = 0; i < len; i += 4) {
-        if (Math.abs(data[i]   - 128) <= tol &&
-            Math.abs(data[i+1] - 128) <= tol &&
-            Math.abs(data[i+2] - 128) <= tol) {
-          data[i]   = 255;
-          data[i+1] = 0;
-          data[i+2] = 255;
-          // alpha unchanged
+        if (Math.abs(data[i]   - tr) <= tol &&
+            Math.abs(data[i+1] - tg) <= tol &&
+            Math.abs(data[i+2] - tb) <= tol) {
+          data[i]   = rr;
+          data[i+1] = rg;
+          data[i+2] = rb;
         }
       }
     }
