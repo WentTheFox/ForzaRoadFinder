@@ -8,6 +8,7 @@
   <meta property="og:description" content="Browser tool that highlights undiscovered roads on the Forza Horizon 6 map by replacing their grey colour (#808080) with magenta in real time via screen capture.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://opengraph.githubassets.com/1/WentTheFox/ForzaRoadFinder">
+  <script src="https://cdn.jsdelivr.net/npm/marked@13/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -103,6 +104,59 @@
       max-height: none;
     }
 
+    #info-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 10;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px;
+      overflow-y: auto;
+    }
+    #info-overlay.open { display: flex; }
+
+    #info-box {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 28px 32px;
+      max-width: 720px;
+      width: 100%;
+      position: relative;
+      color: #ccc;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    #info-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    #info-close:hover { color: #eee; background: none; }
+
+    #info-box h1 { font-size: 20px; color: #eee; margin-bottom: 12px; }
+    #info-box h2 { font-size: 15px; color: #ddd; margin: 20px 0 8px; }
+    #info-box p  { margin-bottom: 10px; }
+    #info-box a  { color: #7ab; }
+    #info-box a:hover { color: #adf; }
+    #info-box table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+    #info-box th, #info-box td { border: 1px solid #333; padding: 5px 10px; text-align: left; }
+    #info-box th { background: #2a2a2a; color: #ddd; }
+    #info-box code { background: #2a2a2a; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+    #info-box ul, #info-box ol { padding-left: 20px; margin-bottom: 10px; }
+    #info-box li { margin-bottom: 4px; }
+    #info-loading { color: #666; font-style: italic; }
+
     #placeholder {
       display: flex;
       flex-direction: column;
@@ -145,7 +199,15 @@
   </div>
 
   <span id="status">Idle</span>
+  <button id="infoBtn" title="About / README">ⓘ</button>
   <a id="ghLink" href="https://github.com/WentTheFox/ForzaRoadFinder" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+<div id="info-overlay">
+  <div id="info-box">
+    <button id="info-close" title="Close">✕</button>
+    <div id="info-content"><span id="info-loading">Loading…</span></div>
+  </div>
 </div>
 
 <div id="canvas-wrap">
@@ -157,6 +219,49 @@
 </div>
 
 <script>
+  // Info modal
+  const infoBtn     = document.getElementById('infoBtn');
+  const infoOverlay = document.getElementById('info-overlay');
+  const infoClose   = document.getElementById('info-close');
+  const infoContent = document.getElementById('info-content');
+
+  let readmeHtml = null;
+
+  async function loadReadme() {
+    infoContent.innerHTML = '<span id="info-loading">Loading…</span>';
+    try {
+      const bust = `?v=${Date.now()}`;
+      let text;
+      try {
+        const res = await fetch(`./README.md${bust}`);
+        if (!res.ok) throw new Error();
+        text = await res.text();
+      } catch {
+        const res = await fetch(`https://raw.githubusercontent.com/WentTheFox/ForzaRoadFinder/main/README.md${bust}`);
+        text = await res.text();
+      }
+      readmeHtml = marked.parse(text);
+    } catch (e) {
+      readmeHtml = '<p>Failed to load README.</p>';
+    }
+    infoContent.innerHTML = readmeHtml;
+  }
+
+  infoBtn.addEventListener('click', () => {
+    infoOverlay.classList.add('open');
+    if (!readmeHtml) loadReadme();
+  });
+
+  infoClose.addEventListener('click', () => infoOverlay.classList.remove('open'));
+
+  infoOverlay.addEventListener('click', e => {
+    if (e.target === infoOverlay) infoOverlay.classList.remove('open');
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') infoOverlay.classList.remove('open');
+  });
+
   const canvas      = document.getElementById('canvas');
   const ctx         = canvas.getContext('2d', { willReadFrequently: true });
   const startBtn    = document.getElementById('startBtn');

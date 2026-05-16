@@ -17,6 +17,11 @@ Undiscovered roads render in a distinct grey (`#808080`). This page captures you
 | **Share Screen** | Requests screen-capture permission and starts processing |
 | **Pause / Resume** | Freezes the frame loop without stopping the stream |
 | **Stop** | Ends the capture and releases the stream |
+| **Save Image** | Exports the current processed frame as a full-resolution timestamped PNG |
+| **100% Scale / Fit to Window** | Toggles between native resolution (scrollable) and scaled-to-fit view |
+| **ⓘ** | Opens this readme |
+| **Find** color | The colour to search for in each frame (default `#808080`) |
+| **Replace** color | The colour to substitute in (default `#FF00FF`) |
 | **FPS** (0.1 – 5) | Frame rate of the processing loop (default 1 FPS) |
 | **Tolerance** (0 – 40) | Per-channel colour tolerance to account for capture compression (default 5) |
 
@@ -25,7 +30,9 @@ Undiscovered roads render in a distinct grey (`#808080`). This page captures you
 - The canvas context is created with `willReadFrequently: true` to keep pixel data in CPU memory and avoid GPU readback on every frame.
 - At tolerance = 0 a fast `Uint32Array` path is used (one comparison per pixel).
 - At tolerance > 0 each channel is compared individually with `Math.abs`.
+- Colour values are parsed once on change and cached; `processFrame` does no string parsing.
 - Frames are scheduled with `setTimeout` rather than `requestAnimationFrame` so the low FPS limit is respected precisely.
+- Up to 1440p (2560×1440) capture resolution is requested from the browser.
 
 ## Browser support
 
