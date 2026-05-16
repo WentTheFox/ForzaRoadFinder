@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forza Road Finder</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #controls {
+      padding: 8px 14px;
+      background: #1e1e1e;
+      border-bottom: 1px solid #333;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      font-size: 13px;
+    }
+
+    button {
+      padding: 5px 14px;
+      cursor: pointer;
+      background: #3a3a3a;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    button:hover:not(:disabled) { background: #4a4a4a; }
+    button:disabled { opacity: 0.4; cursor: default; }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      border: 1px solid #555;
+      display: inline-block;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    input[type=range] { width: 90px; accent-color: #888; }
+    input[type=number] { width: 52px; background: #2a2a2a; color: #eee; border: 1px solid #555; border-radius: 3px; padding: 2px 5px; font-size: 13px; }
+
+    #status {
+      font-size: 12px;
+      color: #888;
+      margin-left: auto;
+    }
+
+    #canvas-wrap {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      background: #0a0a0a;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      image-rendering: pixelated;
+    }
+
+    #placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+      color: #444;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <button id="startBtn">Share Screen</button>
+  <button id="pauseBtn" disabled>Pause</button>
+  <button id="stopBtn" disabled>Stop</button>
+
+  <div class="ctrl-group">
+    <span class="swatch" style="background:#808080"></span>
+    <span>→</span>
+    <span class="swatch" style="background:#ff00ff"></span>
+  </div>
+
+  <div class="ctrl-group">
+    <label for="fps">FPS</label>
+    <input type="range" id="fps" min="0.1" max="5" step="0.1" value="1">
+    <input type="number" id="fpsNum" min="0.1" max="5" step="0.1" value="1">
+  </div>
+
+  <div class="ctrl-group">
+    <label for="tolerance">Tolerance</label>
+    <input type="range" id="tolerance" min="0" max="40" step="1" value="5">
+    <input type="number" id="tolNum" min="0" max="40" step="1" value="5">
+  </div>
+
+  <span id="status">Idle</span>
+</div>
+
+<div id="canvas-wrap">
+  <div id="placeholder">
+    <div>Click <strong>Share Screen</strong> and select your Forza window.</div>
+    <div style="font-size:12px;color:#333">Undiscovered roads (#808080) will be highlighted in magenta.</div>
+  </div>
+  <canvas id="canvas" style="display:none"></canvas>
+</div>
+
+<script>
+  const canvas      = document.getElementById('canvas');
+  const ctx         = canvas.getContext('2d', { willReadFrequently: true });
+  const startBtn    = document.getElementById('startBtn');
+  const pauseBtn    = document.getElementById('pauseBtn');
+  const stopBtn     = document.getElementById('stopBtn');
+  const fpsRange    = document.getElementById('fps');
+  const fpsNum      = document.getElementById('fpsNum');
+  const tolRange    = document.getElementById('tolerance');
+  const tolNum      = document.getElementById('tolNum');
+  const statusEl    = document.getElementById('status');
+  const placeholder = document.getElementById('placeholder');
+
+  // Keep range and number inputs in sync
+  function syncPair(range, num) {
+    range.addEventListener('input', () => { num.value = range.value; });
+    num.addEventListener('input', () => {
+      const v = Math.min(+num.max, Math.max(+num.min, +num.value));
+      range.value = v;
+      num.value = v;
+    });
+  }
+  syncPair(fpsRange, fpsNum);
+  syncPair(tolRange, tolNum);
+
+  let stream  = null;
+  let video   = null;
+  let timer   = null;
+  let running = false;
+  let paused  = false;
+
+  // Target #808080, replacement #FF00FF
+  // In Uint32 little-endian (ABGR order in memory = RGBA in ImageData):
+  //   buf32[i] = R | G<<8 | B<<16 | A<<24
+  //   #808080 A=255 => 0xFF808080
+  //   #FF00FF A=255 => 0xFFFF00FF
+  const TARGET_U32  = 0xFF808080 | 0; // signed 32-bit
+  const REPLACE_U32 = 0xFFFF00FF | 0;
+
+  startBtn.addEventListener('click', async () => {
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: 5, width: { ideal: 2560 }, height: { ideal: 1440 } },
+        audio: false,
+      });
+      video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      await video.play();
+
+      // Wait for actual dimensions
+      if (!video.videoWidth) {
+        await new Promise(res => video.addEventListener('loadedmetadata', res, { once: true }));
+      }
+
+      canvas.width  = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.style.display = 'block';
+      placeholder.style.display = 'none';
+
+      stream.getVideoTracks()[0].addEventListener('ended', stopCapture);
+
+      running = true;
+      paused  = false;
+      startBtn.disabled = true;
+      pauseBtn.disabled = false;
+      stopBtn.disabled  = false;
+      processFrame();
+    } catch (e) {
+      statusEl.textContent = 'Error: ' + (e.message || e);
+    }
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    if (!running) return;
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+    if (!paused) processFrame();
+    else { clearTimeout(timer); statusEl.textContent = 'Paused'; }
+  });
+
+  stopBtn.addEventListener('click', stopCapture);
+
+  function stopCapture() {
+    running = false;
+    paused  = false;
+    clearTimeout(timer);
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    video = null;
+    startBtn.disabled = false;
+    pauseBtn.disabled = true;
+    pauseBtn.textContent = 'Pause';
+    stopBtn.disabled  = true;
+    statusEl.textContent = 'Stopped';
+  }
+
+  function processFrame() {
+    if (!running || paused) return;
+
+    const t0 = performance.now();
+    const W  = canvas.width;
+    const H  = canvas.height;
+
+    ctx.drawImage(video, 0, 0, W, H);
+
+    const imageData = ctx.getImageData(0, 0, W, H);
+    const data      = imageData.data;
+    const tol       = parseInt(tolRange.value, 10);
+
+    if (tol === 0) {
+      // Fast exact-match path via 32-bit view
+      const buf32 = new Uint32Array(data.buffer);
+      const len = buf32.length;
+      for (let i = 0; i < len; i++) {
+        if (buf32[i] === TARGET_U32) buf32[i] = REPLACE_U32;
+      }
+    } else {
+      // Tolerance path — compare each channel individually
+      const len = data.length;
+      for (let i = 0; i < len; i += 4) {
+        if (Math.abs(data[i]   - 128) <= tol &&
+            Math.abs(data[i+1] - 128) <= tol &&
+            Math.abs(data[i+2] - 128) <= tol) {
+          data[i]   = 255;
+          data[i+1] = 0;
+          data[i+2] = 255;
+          // alpha unchanged
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    const elapsed = performance.now() - t0;
+    const fps = parseFloat(fpsRange.value);
+    statusEl.textContent = `${W}×${H} — frame ${elapsed.toFixed(0)} ms — next in ${(1000/fps).toFixed(0)} ms`;
+
+    timer = setTimeout(processFrame, 1000 / fps);
+  }
+</script>
+</body>
+</html>
