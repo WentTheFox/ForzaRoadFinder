@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Forza Road Finder</title>
+  <meta property="og:title" content="Forza Road Finder">
+  <meta property="og:description" content="Browser tool that highlights undiscovered roads on the Forza Horizon 6 map by replacing their grey colour (#808080) with magenta in real time via screen capture.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://opengraph.githubassets.com/1/WentTheFox/ForzaRoadFinder">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -99,6 +103,7 @@
   <button id="startBtn">Share Screen</button>
   <button id="pauseBtn" disabled>Pause</button>
   <button id="stopBtn" disabled>Stop</button>
+  <button id="saveBtn" disabled>Save Image</button>
 
   <div class="ctrl-group">
     <span class="swatch" style="background:#808080"></span>
@@ -135,6 +140,7 @@
   const startBtn    = document.getElementById('startBtn');
   const pauseBtn    = document.getElementById('pauseBtn');
   const stopBtn     = document.getElementById('stopBtn');
+  const saveBtn     = document.getElementById('saveBtn');
   const fpsRange    = document.getElementById('fps');
   const fpsNum      = document.getElementById('fpsNum');
   const tolRange    = document.getElementById('tolerance');
@@ -202,6 +208,17 @@
     }
   });
 
+  saveBtn.addEventListener('click', () => {
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `forza-roads-${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
+
   pauseBtn.addEventListener('click', () => {
     if (!running) return;
     paused = !paused;
@@ -222,6 +239,7 @@
     pauseBtn.disabled = true;
     pauseBtn.textContent = 'Pause';
     stopBtn.disabled  = true;
+    saveBtn.disabled  = true;
     statusEl.textContent = 'Stopped';
   }
 
@@ -261,6 +279,7 @@
     }
 
     ctx.putImageData(imageData, 0, 0);
+    saveBtn.disabled = false;
 
     const elapsed = performance.now() - t0;
     const fps = parseFloat(fpsRange.value);
