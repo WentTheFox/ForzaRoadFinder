@@ -1,5 +1,7 @@
 # Forza Road Finder
 
+![Preview](preview.png)
+
 A lightweight browser tool for locating undiscovered roads in **Forza Horizon 6**.
 
 Undiscovered roads render in a distinct grey (`#808080`). This page captures your screen via the browser's Screen Share API and replaces that colour with bright magenta (`#FF00FF`) in real time, making unvisited roads immediately visible on the in-game map.
