@@ -57,7 +57,7 @@ All screen capture and image processing happens entirely in your browser. No vid
 
 ## Offline / PWA support
 
-The app installs as a Progressive Web App and works fully offline after the first visit. All assets — including the `marked` Markdown parser — are bundled at build time, so there is no runtime dependency on any CDN or external network.
+The app installs as a Progressive Web App and works fully offline after the first visit, with no runtime dependency on any CDN or external network.
 
 ## Performance notes
 
