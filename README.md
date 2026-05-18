@@ -6,23 +6,35 @@ A lightweight browser tool for locating undiscovered roads in **Forza Horizon 6*
 
 Undiscovered roads render in a distinct grey (`#808080`). This page captures your screen via the browser's Screen Share API and replaces that colour with bright magenta (`#FF00FF`) in real time, making unvisited roads immediately visible on the in-game map.
 
+> **Note:** If you're reading this in the in-app Help panel, the app is already running — you can skip the Building and Running section below.
+
+<details>
+<summary>Building and Running</summary>
+
+### Development
+
+Install dependencies, then start a local dev server with live reload:
+
+```
+npm install
+npm run dev
+```
+
+### Production
+
+Build the app, then serve the `dist/` directory with any static file server:
+
+```
+npm install
+npm run build
+```
+
+</details>
+
 ## Usage
 
-> **Note:** If you're reading this in the in-app Help panel, the app is already running — skip ahead to the Controls section below.
-
-1. Clone the repository and install dependencies:
-   ```
-   npm install
-   ```
-2. Build the app:
-   ```
-   npm run build
-   ```
-3. Serve the `dist/` directory with any static file server and open it in your browser.
-4. Click **Share Screen** and select your Forza Horizon 6 window.
-5. Grey undiscovered roads will be highlighted in magenta on the canvas.
-
-For local development with live reload, use `npm run dev` instead of building.
+1. Click **Share Screen** and select your Forza Horizon 6 window.
+2. Grey undiscovered roads will be highlighted in magenta on the canvas.
 
 ## Controls
 
