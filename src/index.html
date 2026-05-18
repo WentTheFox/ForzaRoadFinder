@@ -9,6 +9,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://roadfinder.went.tf/">
   <meta property="og:image" content="https://roadfinder.went.tf/preview.png">
+  <meta name="description" content="Browser tool that highlights undiscovered roads on the Forza Horizon map by replacing their grey colour with magenta in real time via screen capture.">
   <link rel="canonical" href="https://roadfinder.went.tf/">
   <link rel="icon" type="image/png" href="../favicon.png">
   <link rel="manifest" href="./manifest.json">
@@ -173,9 +174,29 @@
       color: #888;
       font-size: 15px;
     }
+
+    #placeholder-hint {
+      font-size: 12px;
+      color: #777;
+    }
+
+    .skip-link {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      background: #333;
+      color: #eee;
+      padding: 4px 10px;
+      border-radius: 0 0 4px 0;
+      font-size: 13px;
+      z-index: 100;
+      text-decoration: none;
+    }
+    .skip-link:focus { top: 0; }
   </style>
 </head>
 <body>
+<a class="skip-link" href="#canvas-wrap">Skip to main content</a>
 
 <div id="controls">
   <button id="startBtn">Share Screen</button>
@@ -195,13 +216,13 @@
   <div class="ctrl-group">
     <label for="fps">FPS</label>
     <input type="range" id="fps" min="0.1" max="30" step="0.1" value="1">
-    <input type="number" id="fpsNum" min="0.1" max="30" step="0.1" value="1">
+    <input type="number" id="fpsNum" min="0.1" max="30" step="0.1" value="1" aria-label="FPS value">
   </div>
 
   <div class="ctrl-group">
     <label for="tolerance">Tolerance</label>
     <input type="range" id="tolerance" min="0" max="40" step="1" value="5">
-    <input type="number" id="tolNum" min="0" max="40" step="1" value="5">
+    <input type="number" id="tolNum" min="0" max="40" step="1" value="5" aria-label="Tolerance value">
   </div>
 
   <div class="ctrl-group">
@@ -221,13 +242,13 @@
   </div>
 </div>
 
-<div id="canvas-wrap">
+<main id="canvas-wrap">
   <div id="placeholder">
     <div>Click <strong>Share Screen</strong> and select your Forza window.</div>
-    <div id="placeholder-hint" style="font-size:12px;color:#666"></div>
+    <div id="placeholder-hint"></div>
   </div>
   <canvas id="canvas" style="display:none"></canvas>
-</div>
+</main>
 
 <script type="module" src="./main.js"></script>
 </body>
