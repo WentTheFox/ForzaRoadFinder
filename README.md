@@ -39,6 +39,10 @@ For local development with live reload, use `npm run dev` instead of building.
 | **FPS** (0.1 – 30) | Frame rate of the processing loop (default 1 FPS) |
 | **Tolerance** (0 – 40) | Per-channel colour tolerance to account for capture compression (default 5) |
 
+## Privacy
+
+All screen capture and image processing happens entirely in your browser. No video, pixel data, or any other information is ever sent to a server or third party.
+
 ## Offline / PWA support
 
 The app installs as a Progressive Web App and works fully offline after the first visit. All assets — including the `marked` Markdown parser — are bundled at build time, so there is no runtime dependency on any CDN or external network.
