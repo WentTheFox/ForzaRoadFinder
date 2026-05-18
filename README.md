@@ -1,16 +1,40 @@
 # Forza Road Finder
 
-![Preview](preview.png)
+![Preview](https://raw.githubusercontent.com/WentTheFox/ForzaRoadFinder/main/preview.png)
 
 A lightweight browser tool for locating undiscovered roads in **Forza Horizon 6**.
 
 Undiscovered roads render in a distinct grey (`#808080`). This page captures your screen via the browser's Screen Share API and replaces that colour with bright magenta (`#FF00FF`) in real time, making unvisited roads immediately visible on the in-game map.
 
+> **Note:** If you're reading this in the in-app Help panel, the app is already running — you can skip the Building and Running section below.
+
+<details>
+<summary>Building and Running</summary>
+
+### Development
+
+Install dependencies, then start a local dev server with live reload:
+
+```
+npm install
+npm run dev
+```
+
+### Production
+
+Build the app, then serve the `dist/` directory with any static file server:
+
+```
+npm install
+npm run build
+```
+
+</details>
+
 ## Usage
 
-1. Open `index.html` directly in your browser (no server required).
-2. Click **Share Screen** and select your Forza Horizon 6 window.
-3. Grey undiscovered roads will be highlighted in magenta on the canvas.
+1. Click **Share Screen** and select your Forza Horizon 6 window.
+2. Grey undiscovered roads will be highlighted in magenta on the canvas.
 
 ## Controls
 
@@ -21,11 +45,19 @@ Undiscovered roads render in a distinct grey (`#808080`). This page captures you
 | **Stop** | Ends the capture and releases the stream |
 | **Save Image** | Exports the current processed frame as a full-resolution timestamped PNG |
 | **100% Scale / Fit to Window** | Toggles between native resolution (scrollable) and scaled-to-fit view |
-| **ⓘ** | Opens this readme |
+| **ⓘ Help** | Opens this readme |
 | **Find** color | The colour to search for in each frame (default `#808080`) |
 | **Replace** color | The colour to substitute in (default `#FF00FF`) |
-| **FPS** (0.1 – 5) | Frame rate of the processing loop (default 1 FPS) |
+| **FPS** (0.1 – 30) | Frame rate of the processing loop (default 1 FPS) |
 | **Tolerance** (0 – 40) | Per-channel colour tolerance to account for capture compression (default 5) |
+
+## Privacy
+
+All screen capture and image processing happens entirely in your browser. No video, pixel data, or any other information is ever sent to a server or third party.
+
+## Offline / PWA support
+
+The app installs as a Progressive Web App and works fully offline after the first visit, with no runtime dependency on any CDN or external network.
 
 ## Performance notes
 
