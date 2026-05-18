@@ -1,5 +1,6 @@
 import { marked } from 'marked';
 import readmeText from 'bundle-text:../README.md';
+import previewUrl from 'url:../preview.png';
 
 // Info modal
 const infoBtn     = document.getElementById('infoBtn');
@@ -10,7 +11,8 @@ const infoContent = document.getElementById('info-content');
 let readmeHtml = null;
 
 function loadReadme() {
-  readmeHtml = marked.parse(readmeText);
+  const text = readmeText.replace('https://raw.githubusercontent.com/WentTheFox/ForzaRoadFinder/main/preview.png', previewUrl);
+  readmeHtml = marked.parse(text);
   infoContent.innerHTML = readmeHtml;
 }
 
