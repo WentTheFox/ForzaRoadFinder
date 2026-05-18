@@ -2,7 +2,7 @@
   "name": "forza-road-finder",
   "private": true,
   "scripts": {
-    "build": "parcel build src/index.html",
+    "build": "parcel build src/index.html && cp src/robots.txt dist/robots.txt",
     "dev": "parcel src/index.html"
   },
   "devDependencies": {
