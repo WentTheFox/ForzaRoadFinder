@@ -46,6 +46,7 @@ const colorReplace = document.getElementById('colorReplace');
 const greyscaleCb  = document.getElementById('greyscale');
 const statusEl     = document.getElementById('status');
 const placeholder  = document.getElementById('placeholder');
+const placeholderHint = document.getElementById('placeholder-hint');
 
 // Keep range and number inputs in sync
 function syncPair(range, num) {
@@ -85,6 +86,7 @@ function updateColors() {
   replaceRgb = hexToRgb(colorReplace.value);
   targetU32  = rgbToU32(...targetRgb);
   replaceU32 = rgbToU32(...replaceRgb);
+  placeholderHint.textContent = `Undiscovered roads (${colorTarget.value.toUpperCase()}) will be highlighted in ${colorReplace.value.toUpperCase()}.`;
 }
 
 colorTarget.addEventListener('input', updateColors);
