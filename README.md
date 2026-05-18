@@ -8,9 +8,21 @@ Undiscovered roads render in a distinct grey (`#808080`). This page captures you
 
 ## Usage
 
-1. Open `index.html` directly in your browser (no server required).
-2. Click **Share Screen** and select your Forza Horizon 6 window.
-3. Grey undiscovered roads will be highlighted in magenta on the canvas.
+> **Note:** If you're reading this in the in-app Help panel, the app is already running — skip ahead to the Controls section below.
+
+1. Clone the repository and install dependencies:
+   ```
+   npm install
+   ```
+2. Build the app:
+   ```
+   npm run build
+   ```
+3. Serve the `dist/` directory with any static file server and open it in your browser.
+4. Click **Share Screen** and select your Forza Horizon 6 window.
+5. Grey undiscovered roads will be highlighted in magenta on the canvas.
+
+For local development with live reload, use `npm run dev` instead of building.
 
 ## Controls
 
@@ -21,11 +33,15 @@ Undiscovered roads render in a distinct grey (`#808080`). This page captures you
 | **Stop** | Ends the capture and releases the stream |
 | **Save Image** | Exports the current processed frame as a full-resolution timestamped PNG |
 | **100% Scale / Fit to Window** | Toggles between native resolution (scrollable) and scaled-to-fit view |
-| **ⓘ** | Opens this readme |
+| **ⓘ Help** | Opens this readme |
 | **Find** color | The colour to search for in each frame (default `#808080`) |
 | **Replace** color | The colour to substitute in (default `#FF00FF`) |
-| **FPS** (0.1 – 5) | Frame rate of the processing loop (default 1 FPS) |
+| **FPS** (0.1 – 30) | Frame rate of the processing loop (default 1 FPS) |
 | **Tolerance** (0 – 40) | Per-channel colour tolerance to account for capture compression (default 5) |
+
+## Offline / PWA support
+
+The app installs as a Progressive Web App and works fully offline after the first visit. All assets — including the `marked` Markdown parser — are bundled at build time, so there is no runtime dependency on any CDN or external network.
 
 ## Performance notes
 

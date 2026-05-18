@@ -1,0 +1,16 @@
+{
+  "name": "Forza Road Finder",
+  "short_name": "RoadFinder",
+  "description": "Highlights undiscovered roads on the Forza Horizon map by replacing grey pixels with magenta in real time via screen capture.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#1e1e1e",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "any",
+      "type": "image/png"
+    }
+  ]
+}

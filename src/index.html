@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forza Road Finder</title>
+  <meta property="og:title" content="Forza Road Finder">
+  <meta property="og:description" content="Browser tool that highlights undiscovered roads on the Forza Horizon 6 map by replacing their grey colour (#808080) with magenta in real time via screen capture.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://roadfinder.went.tf/">
+  <meta property="og:image" content="https://roadfinder.went.tf/preview.png">
+  <link rel="canonical" href="https://roadfinder.went.tf/">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="manifest" href="./manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #controls {
+      padding: 8px 14px;
+      background: #1e1e1e;
+      border-bottom: 1px solid #333;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      font-size: 13px;
+    }
+
+    button {
+      padding: 5px 14px;
+      cursor: pointer;
+      background: #3a3a3a;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    button:hover:not(:disabled) { background: #4a4a4a; }
+    button:disabled { opacity: 0.4; cursor: default; }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    input[type=color] {
+      width: 32px;
+      height: 24px;
+      padding: 1px 2px;
+      border: 1px solid #555;
+      border-radius: 3px;
+      background: #2a2a2a;
+      cursor: pointer;
+    }
+
+    input[type=range] { width: 90px; accent-color: #888; }
+    input[type=checkbox] { accent-color: #888; cursor: pointer; }
+    input[type=checkbox] + label { cursor: pointer; }
+    input[type=number] { width: 52px; background: #2a2a2a; color: #eee; border: 1px solid #555; border-radius: 3px; padding: 2px 5px; font-size: 13px; }
+
+    #status {
+      font-size: 12px;
+      color: #888;
+    }
+
+    #ghLink {
+      margin-left: auto;
+      font-size: 12px;
+      color: #888;
+      text-decoration: none;
+    }
+    #ghLink:hover { color: #ccc; }
+
+    #canvas-wrap {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #0a0a0a;
+      overflow: hidden;
+    }
+
+    #canvas-wrap.full-scale {
+      overflow: auto;
+      align-items: flex-start;
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      image-rendering: pixelated;
+    }
+
+    #canvas-wrap.full-scale canvas {
+      max-width: none;
+      max-height: none;
+    }
+
+    #info-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 10;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 16px;
+      overflow-y: auto;
+    }
+    #info-overlay.open { display: flex; }
+
+    #info-box {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 28px 32px;
+      max-width: 720px;
+      width: 100%;
+      position: relative;
+      color: #ccc;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    #info-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    #info-close:hover { color: #eee; background: none; }
+
+    #info-box h1 { font-size: 20px; color: #eee; margin-bottom: 12px; }
+    #info-box h2 { font-size: 15px; color: #ddd; margin: 20px 0 8px; }
+    #info-box p  { margin-bottom: 10px; }
+    #info-box a  { color: #7ab; }
+    #info-box a:hover { color: #adf; }
+    #info-box table { border-collapse: collapse; width: 100%; margin-bottom: 10px; }
+    #info-box th, #info-box td { border: 1px solid #333; padding: 5px 10px; text-align: left; }
+    #info-box th { background: #2a2a2a; color: #ddd; }
+    #info-box code { background: #2a2a2a; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+    #info-box ul, #info-box ol { padding-left: 20px; margin-bottom: 10px; }
+    #info-box li { margin-bottom: 4px; }
+    #info-box img { max-width: 100%; height: auto; border-radius: 4px; }
+    #info-loading { color: #666; font-style: italic; }
+
+    #placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+      color: #888;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <button id="startBtn">Share Screen</button>
+  <button id="pauseBtn" disabled>Pause</button>
+  <button id="stopBtn" disabled>Stop</button>
+  <button id="saveBtn" disabled>Save Image</button>
+  <button id="scaleBtn">100% Scale</button>
+
+  <div class="ctrl-group">
+    <label for="colorTarget">Find</label>
+    <input type="color" id="colorTarget" value="#808080">
+    <span>→</span>
+    <label for="colorReplace">Replace</label>
+    <input type="color" id="colorReplace" value="#ff00ff">
+  </div>
+
+  <div class="ctrl-group">
+    <label for="fps">FPS</label>
+    <input type="range" id="fps" min="0.1" max="30" step="0.1" value="1">
+    <input type="number" id="fpsNum" min="0.1" max="30" step="0.1" value="1">
+  </div>
+
+  <div class="ctrl-group">
+    <label for="tolerance">Tolerance</label>
+    <input type="range" id="tolerance" min="0" max="40" step="1" value="5">
+    <input type="number" id="tolNum" min="0" max="40" step="1" value="5">
+  </div>
+
+  <div class="ctrl-group">
+    <input type="checkbox" id="greyscale" checked>
+    <label for="greyscale">Greyscale</label>
+  </div>
+
+  <span id="status">Idle</span>
+  <button id="infoBtn" title="About / README">ⓘ Help</button>
+  <a id="ghLink" href="https://github.com/WentTheFox/ForzaRoadFinder" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+<div id="info-overlay">
+  <div id="info-box">
+    <button id="info-close" title="Close">✕</button>
+    <div id="info-content"><span id="info-loading">Loading…</span></div>
+  </div>
+</div>
+
+<div id="canvas-wrap">
+  <div id="placeholder">
+    <div>Click <strong>Share Screen</strong> and select your Forza window.</div>
+    <div style="font-size:12px;color:#666">Undiscovered roads (#808080) will be highlighted in magenta.</div>
+  </div>
+  <canvas id="canvas" style="display:none"></canvas>
+</div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

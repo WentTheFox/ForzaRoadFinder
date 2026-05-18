@@ -1,0 +1,17 @@
+{
+  "name": "forza-road-finder",
+  "private": true,
+  "scripts": {
+    "build": "parcel build src/index.html",
+    "dev": "parcel src/index.html"
+  },
+  "devDependencies": {
+    "@parcel/packager-raw-url": "^2.16.4",
+    "@parcel/transformer-inline-string": "^2.16.4",
+    "@parcel/transformer-webmanifest": "^2.16.4",
+    "parcel": "^2.13.0"
+  },
+  "dependencies": {
+    "marked": "^13.0.0"
+  }
+}
