@@ -1,6 +1,6 @@
 # Forza Road Finder
 
-![Preview](preview.png)
+![Preview](https://raw.githubusercontent.com/WentTheFox/ForzaRoadFinder/main/preview.png)
 
 A lightweight browser tool for locating undiscovered roads in **Forza Horizon 6**.
 
