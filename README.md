@@ -50,6 +50,7 @@ npm run build
 | **Replace** color | The colour to substitute in (default `#FF00FF`) |
 | **FPS** (0.1 – 30) | Frame rate of the processing loop (default 1 FPS) |
 | **Tolerance** (0 – 40) | Per-channel colour tolerance to account for capture compression (default 5) |
+| **Greyscale** checkbox | When checked, converts all non-matched pixels to greyscale so the replacement colour stands out clearly (default on) |
 
 ## Privacy
 
