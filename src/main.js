@@ -95,23 +95,38 @@ colorTarget.addEventListener('input', updateColors);
 colorReplace.addEventListener('input', updateColors);
 updateColors();
 
+let starting = false;
+
 startBtn.addEventListener('click', async () => {
+  if (starting || running) return;
+
+  starting = true;
+  startBtn.disabled = true;
+
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: 5, width: { ideal: 2560 }, height: { ideal: 1440 } },
+      video: {
+        frameRate: 5,
+        width: { ideal: 2560 },
+        height: { ideal: 1440 }
+      },
       audio: false,
     });
+
     video = document.createElement('video');
-    video.srcObject = stream;
     video.muted = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    video.srcObject = stream;
+
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = resolve;
+      video.onerror = reject;
+    });
+
     await video.play();
 
-    // Wait for actual dimensions
-    if (!video.videoWidth) {
-      await new Promise(res => video.addEventListener('loadedmetadata', res, { once: true }));
-    }
-
-    canvas.width  = video.videoWidth;
+    canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.style.display = 'block';
     placeholder.style.display = 'none';
@@ -119,13 +134,31 @@ startBtn.addEventListener('click', async () => {
     stream.getVideoTracks()[0].addEventListener('ended', stopCapture);
 
     running = true;
-    paused  = false;
-    startBtn.disabled = true;
+    paused = false;
     pauseBtn.disabled = false;
-    stopBtn.disabled  = false;
+    stopBtn.disabled = false;
+
     processFrame();
   } catch (e) {
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+
+    video = null;
+    startBtn.disabled = false;
+
+    if (
+      e.name === 'AbortError' ||
+      String(e.message || e).includes('interrupted')
+    ) {
+      statusEl.textContent = 'Capture start was interrupted. Try Share Screen again.';
+      return;
+    }
+
     statusEl.textContent = 'Error: ' + (e.message || e);
+  } finally {
+    starting = false;
   }
 });
 
@@ -157,15 +190,25 @@ stopBtn.addEventListener('click', stopCapture);
 
 function stopCapture() {
   running = false;
-  paused  = false;
+  paused = false;
   clearTimeout(timer);
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  video = null;
+
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+
+  if (video) {
+    video.pause();
+    video.srcObject = null;
+    video = null;
+  }
+
   startBtn.disabled = false;
   pauseBtn.disabled = true;
   pauseBtn.textContent = 'Pause';
-  stopBtn.disabled  = true;
-  saveBtn.disabled  = true;
+  stopBtn.disabled = true;
+  saveBtn.disabled = true;
   statusEl.textContent = 'Stopped';
 }
 
